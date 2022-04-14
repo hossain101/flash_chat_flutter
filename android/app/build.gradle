@@ -43,11 +43,13 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.example.flash_chat_flutter"
+        applicationId "com.shoaib.flash_chat_flutter"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        minSdkVersion 19
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -65,4 +67,9 @@ flutter {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation platform('com.google.firebase:firebase-bom:29.3.0')
+    implementation("androidx.multidex:multidex:2.0.1")
 }
+
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.android.application'
