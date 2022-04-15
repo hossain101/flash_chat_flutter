@@ -2,6 +2,8 @@ import 'package:flash_chat_flutter/components/rounded_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flash_chat_flutter/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatScreen extends StatefulWidget {
   static const String id = 'chat_screen';
@@ -10,8 +12,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  bool showSpinner = false;
   final _auth = FirebaseAuth.instance;
+  final _firesotre = FirebaseFirestore.instance;
   late User loggedInUser;
+  late String messageText;
 
   @override
   void initState() {
@@ -33,6 +38,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void getMessages() async {
+    final messages = await _firesotre.collection('messages').get();
+    print(messages.docs[2]['text']);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,16 +51,30 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: <Widget>[
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: MaterialButton(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(150.0),
+            child: ModalProgressHUD(
+              inAsyncCall: showSpinner,
+              child: MaterialButton(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(150.0),
+                ),
+                child: Text('Sign Out'),
+                color: Colors.blueGrey,
+                onPressed: () async {
+                  getMessages();
+                  // setState(() {
+                  //   showSpinner = true;
+                  // });
+                  // try {
+                  //   await _auth.signOut();
+                  //   Navigator.pop(context);
+                  //   setState(() {
+                  //     showSpinner = false;
+                  //   });
+                  // } catch (e) {
+                  //   print(e);
+                  // }
+                },
               ),
-              child: Text('Sign Out'),
-              color: Colors.blueGrey,
-              onPressed: () {
-                _auth.signOut();
-                Navigator.pop(context);
-              },
             ),
           ),
         ],
@@ -70,6 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: TextField(
                       onChanged: (value) {
+                        messageText = value;
                         //Do something with the user input.
                       },
                       decoration: kMessageTextFieldDecoration,
@@ -77,6 +102,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   FlatButton(
                     onPressed: () {
+                      _firesotre.collection('messages').add({
+                        'text': messageText,
+                        'sender': loggedInUser.email,
+                      });
                       //Implement send functionality.
                     },
                     child: Text(
