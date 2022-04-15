@@ -38,9 +38,26 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  //when using .get method we can directly access the messages collection from the firebase database.
   void getMessages() async {
     final messages = await _firesotre.collection('messages').get();
+    for (int i = 0; i < messages.size; i++) {
+      print(messages.docs[i]['sender']);
+    }
+
     print(messages.docs[2]['text']);
+  }
+
+  //when we use the snapshot method we have to use the for each method twice to get to the text in firebase database
+  void messageStream() async {
+    final messageStreamData =
+        await _firesotre.collection('messages').snapshots();
+
+    messageStreamData.forEach((element) {
+      element.docs.forEach((messageElement) {
+        print(messageElement.data());
+      });
+    });
   }
 
   @override
@@ -60,6 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 child: Text('Sign Out'),
                 color: Colors.blueGrey,
                 onPressed: () async {
+                  //messageStream();
                   getMessages();
                   // setState(() {
                   //   showSpinner = true;
