@@ -14,7 +14,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   bool showSpinner = false;
   final _auth = FirebaseAuth.instance;
-  final _firesotre = FirebaseFirestore.instance;
+  final _firestore = FirebaseFirestore.instance;
   late User loggedInUser;
   late String messageText;
 
@@ -40,7 +40,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   //when using .get method we can directly access the messages collection from the firebase database.
   void getMessages() async {
-    final messages = await _firesotre.collection('messages').get();
+    final messages = await _firestore.collection('messages').get();
     for (int i = 0; i < messages.size; i++) {
       print(messages.docs[i]['sender']);
     }
@@ -51,7 +51,7 @@ class _ChatScreenState extends State<ChatScreen> {
   //when we use the snapshot method we have to use the for each method twice to get to the text in firebase database
   void messageStream() async {
     final messageStreamData =
-        await _firesotre.collection('messages').snapshots();
+        await _firestore.collection('messages').snapshots();
 
     messageStreamData.forEach((element) {
       element.docs.forEach((messageElement) {
@@ -100,41 +100,67 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: Colors.lightBlueAccent,
       ),
       body: SafeArea(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Container(
-              decoration: kMessageContainerDecoration,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      onChanged: (value) {
-                        messageText = value;
-                        //Do something with the user input.
-                      },
-                      decoration: kMessageTextFieldDecoration,
-                    ),
-                  ),
-                  FlatButton(
-                    onPressed: () {
-                      _firesotre.collection('messages').add({
-                        'text': messageText,
-                        'sender': loggedInUser.email,
-                      });
-                      //Implement send functionality.
-                    },
-                    child: Text(
-                      'Send',
-                      style: kSendButtonTextStyle,
-                    ),
-                  ),
-                ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              StreamBuilder<QuerySnapshot>(
+                stream: _firestore.collection('messages').snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  List<Text> messageWidgets = [];
+                  final messages = snapshot.data!.docs;
+                  int count = 0;
+                  for (var message in messages) {
+                    Map<String, dynamic> data =
+                        message.data() as Map<String, dynamic>;
+                    final messageWidget =
+                        Text('${data['text']} from ${data['sender']}\n');
+                    messageWidgets.add(messageWidget);
+                  }
+
+                  return Column(
+                    children: messageWidgets,
+                  );
+                },
               ),
-            ),
-          ],
+              Container(
+                decoration: kMessageContainerDecoration,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        onChanged: (value) {
+                          messageText = value;
+                          //Do something with the user input.
+                        },
+                        decoration: kMessageTextFieldDecoration,
+                      ),
+                    ),
+                    FlatButton(
+                      onPressed: () {
+                        _firestore.collection('messages').add({
+                          'text': messageText,
+                          'sender': loggedInUser.email,
+                        });
+                        //Implement send functionality.
+                      },
+                      child: Text(
+                        'Send',
+                        style: kSendButtonTextStyle,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
